@@ -13,7 +13,7 @@ function Config(ShoppingListCheckOffServiceProvider) {
 }
 
 ToBuyController.$inject = ['ShoppingListCheckOffService'];
-function ToBuyController(ShoppingListCheckOffService) {
+function ToBuyController(ShoppingListCheckOffService, $scope) {
   var toBuy = this;
 
   toBuy.everythingBought = false;
@@ -29,12 +29,16 @@ function ToBuyController(ShoppingListCheckOffService) {
 }
 
 
-AlreadyBoughtController.$inject = ['ShoppingListCheckOffService'];
-function AlreadyBoughtController(ShoppingListCheckOffService) {
+AlreadyBoughtController.$inject = ['ShoppingListCheckOffService', '$scope'];
+function AlreadyBoughtController(ShoppingListCheckOffService, $scope) {
   var alreadyBought = this;
 
-  alreadyBought.emptyList = false;
   alreadyBought.boughtItems = ShoppingListCheckOffService.getBoughtItems();
+  alreadyBought.emptyList = ShoppingListCheckOffService.getEmptyList();
+
+  $scope.$watch(function (context) {
+    context.alreadyBought.emptyList = ShoppingListCheckOffService.getEmptyList();
+  })
 
 }
 
@@ -44,7 +48,8 @@ function ShoppingListCheckOffService(maxItems) {
   // List of shopping items
   var toBuyItems = [{ name: "cookies", quantity: 10 }, { name: "breads", quantity: 7 },
   { name: "eggs", quantity: 12 }, { name: "apple", quantity: 3 }, { name: "cheese", quantity: 3 }],
-  boughtItems = [];
+  boughtItems = [],
+  emptyList = true;
 
   service.buyItem = function (itemIdex) {
     if ((maxItems === undefined) ||
@@ -53,9 +58,16 @@ function ShoppingListCheckOffService(maxItems) {
       toBuyItems.splice(itemIdex, 1);
       boughtItems.push(item);
     }
+    if(emptyList && boughtItems.length > 0){
+      emptyList = false;
+    }
     if((maxItems !== undefined) && (boughtItems.length === maxItems)) {
       throw new Error("Max items (" + maxItems + ") reached.");
     }
+  };
+
+  service.getEmptyList = function () {
+    return emptyList;
   };
 
   service.getToBuyItems = function () {
